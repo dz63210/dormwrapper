@@ -2,6 +2,10 @@
 
 DormWrapper is a full-stack product recommendation app for students furnishing a dorm or first apartment. A user uploads a room photo, chooses a budget and design style, and receives a curated set of IKEA furniture recommendations.
 
+## Demo
+
+[DormWrapper walkthrough (1:16)](https://drive.google.com/file/d/1HsifagKMUaNMHpt1QBewhqL6APp-u9vL/view?usp=sharing)
+
 ## Tech stack
 
 - **Frontend:** React, TypeScript, Vite, Tailwind CSS
