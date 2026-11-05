@@ -5,3 +5,4 @@ __pycache__/
 data/app.db
 data/uploads/
 data/research/
+/.venv-mac/

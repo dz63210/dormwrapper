@@ -2,7 +2,7 @@ import { Link, Navigate, Route, Routes } from 'react-router-dom'
 import type { ReactNode } from 'react'
 import { useState } from 'react'
 import { useUser } from './context/UserContext'
-import LoginPage from './pages/LoginPage'
+import LoginPage from './pages/LocalLoginPage'
 import HomePage from './pages/HomePage'
 import DesignPage from './pages/DesignPage'
 
@@ -45,7 +45,7 @@ export default function App() {
     <>
       <TopBar />
       <Routes>
-        <Route path="/login" element={user?.email ? <Navigate to="/" replace /> : <LoginPage />} />
+        <Route path="/login" element={user ? <Navigate to="/" replace /> : <LoginPage />} />
         <Route
           path="/"
           element={

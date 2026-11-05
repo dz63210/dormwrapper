@@ -19,6 +19,8 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from pathlib import Path
 
+import base64
+import httpx
 from PIL import Image, ImageChops
 
 from app.config import settings
@@ -133,6 +135,36 @@ class MockImageGenerator(ImageGenerator):
         out_path = os.path.join(settings.upload_dir, out_name)
         shutil.copy(request.room_image_path, out_path)
         return ImageGenResult(generated_image_path=out_path)
+
+
+class OpenAIImageGenerator(ImageGenerator):
+    def generate(self, request: ImageGenRequest) -> ImageGenResult:
+        if not settings.openai_api_key:
+            raise RuntimeError("Set OPENAI_API_KEY in backend/.env to generate room previews.")
+
+        room = Path(request.room_image_path)
+        mime_type = mimetypes.guess_type(room.name)[0] or "image/jpeg"
+        prompt = "\n\n".join(filter(None, [request.instructions, _build_prompt(request)]))
+        try:
+            with room.open("rb") as photo:
+                response = httpx.post(
+                    "https://api.openai.com/v1/images/edits",
+                    headers={"Authorization": f"Bearer {settings.openai_api_key}"},
+                    data={"model": "gpt-image-2.5-sunburst", "prompt": prompt, "quality": "medium"},
+                    files={"image": (room.name, photo, mime_type)},
+                    timeout=180,
+                )
+            response.raise_for_status()
+            image = base64.b64decode(response.json()["data"][0]["b64_json"], validate=True)
+        except httpx.HTTPStatusError as exc:
+            raise RuntimeError(f"OpenAI image editing returned HTTP {exc.response.status_code}.") from exc
+        except (httpx.RequestError, ValueError, KeyError, IndexError, TypeError) as exc:
+            raise RuntimeError("Could not retrieve the room preview from OpenAI.") from exc
+
+        output = Path(settings.upload_dir) / f"openai_generated_{room.stem}.png"
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_bytes(image)
+        return ImageGenResult(generated_image_path=str(output))
 
 
 class GeminiImageGenerator(ImageGenerator):
@@ -323,6 +355,8 @@ class ReplicateImageGenerator(ImageGenerator):
 def get_image_generator() -> ImageGenerator:
     """Factory: picks the generator based on IMAGE_GEN_PROVIDER in settings."""
     provider = settings.image_gen_provider.lower()
+    if provider == "openai":
+        return OpenAIImageGenerator()
     if provider == "gemini":
         return GeminiImageGenerator()
     if provider == "replicate":

@@ -55,6 +55,7 @@ class Settings(BaseSettings):
     # Image-gen provider credentials. IMAGE_GEN_PROVIDER=gemini uses the Google
     # Gemini "Nano Banana 2 Lite" model and reads gemini_api_key / google_api_key.
     gemini_api_key: str | None = None
+    openai_api_key: str | None = None
     google_api_key: str | None = None
     replicate_api_token: str | None = None
 
